@@ -5,8 +5,12 @@ class BytesSettingsFrame:
         self.config_manager = config_manager
         self.app = app
 
-        bytes_sent_group = ttk.LabelFrame(parent, text="Bytes Sent Settings")
-        bytes_sent_group.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+        self.frame = ttk.LabelFrame(parent, text="Bytes Sent and Received Settings")
+        self.frame.grid(padx=10, pady=10, sticky="ew")
+        self.frame.columnconfigure(1, weight=1)
+
+        bytes_sent_group = ttk.LabelFrame(self.frame, text="Bytes Sent Settings")
+        bytes_sent_group.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
         bytes_sent_group.columnconfigure(1, weight=1)
 
         ttk.Label(bytes_sent_group, text="Min bytes sent:").grid(row=0, column=0, padx=10, pady=10, sticky="w")
@@ -24,8 +28,8 @@ class BytesSettingsFrame:
         self.avg_sent_entry.insert(0, str(self.config_manager.get('bytes_sent_avg_default')))
         self.avg_sent_entry.grid(row=0, column=5, padx=10, pady=10, sticky="ew")
 
-        bytes_received_group = ttk.LabelFrame(parent, text="Bytes Received Settings")
-        bytes_received_group.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
+        bytes_received_group = ttk.LabelFrame(self.frame, text="Bytes Received Settings")
+        bytes_received_group.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
         bytes_received_group.columnconfigure(1, weight=1)
 
         ttk.Label(bytes_received_group, text="Min bytes received:").grid(row=0, column=0, padx=10, pady=10, sticky="w")

@@ -7,10 +7,7 @@ from logs_generator.frontend.log_settings_frame import LogSettingsFrame
 from logs_generator.frontend.bytes_settings_frame import BytesSettingsFrame
 from logs_generator.frontend.service_type_frame import ServiceTypeFrame
 from logs_generator.frontend.action_settings_frame import ActionSettingsFrame
-from logs_generator.frontend.destinations_settings_frame import DestinationsSettingsFrame
-from logs_generator.frontend.users_settings_frame import UsersSettingsFrame
-from logs_generator.frontend.devices_settings_frame import DevicesSettingsFrame
-from logs_generator.frontend.categories_settings_frame import CategoriesSettingsFrame
+from logs_generator.utils.distribution_settings_frame import DistributionSettingsFrame
 
 class ApplicationGUI:
     def __init__(self, root, config_manager, log_generator):
@@ -38,21 +35,30 @@ class ApplicationGUI:
         self.scroll_y.pack(side="right", fill="y")
         self.canvas.pack(side="left", fill="both", expand=True)
         self.canvas.configure(yscrollcommand=self.scroll_y.set)
-        
+
         self.frame = ttk.Frame(self.canvas)
         self.canvas.create_window((0, 0), window=self.frame, anchor="nw")
         self.frame.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-        
+
         self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
 
         self.log_settings_frame = LogSettingsFrame(self.frame, self.config_manager, self)
         self.bytes_settings_frame = BytesSettingsFrame(self.frame, self.config_manager, self)
         self.service_type_frame = ServiceTypeFrame(self.frame)
         self.action_settings_frame = ActionSettingsFrame(self.frame)
-        self.destinations_settings_frame = DestinationsSettingsFrame(self.frame, self.config_manager, self)
-        self.users_settings_frame = UsersSettingsFrame(self.frame, self.config_manager, self)
-        self.devices_settings_frame = DevicesSettingsFrame(self.frame, self.config_manager, self)
-        self.categories_settings_frame = CategoriesSettingsFrame(self.frame, self.config_manager, self)
+        self.destinations_settings_frame = DistributionSettingsFrame(self.frame, self.config_manager, self, "Destinations", 'distinct_destinations_default', 5)
+        self.users_settings_frame = DistributionSettingsFrame(self.frame, self.config_manager, self, "Users", 'distinct_users_default', 100)
+        self.devices_settings_frame = DistributionSettingsFrame(self.frame, self.config_manager, self, "Devices", 'distinct_devices_default', 50)
+        self.categories_settings_frame = DistributionSettingsFrame(self.frame, self.config_manager, self, "Categories", 'distinct_categories_default', 10)
+
+        self.log_settings_frame.frame.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        self.bytes_settings_frame.frame.grid(row=1, column=0, padx=10, pady=10, sticky="ew")
+        self.service_type_frame.frame.grid(row=2, column=0, padx=10, pady=10, sticky="ew")
+        self.action_settings_frame.frame.grid(row=3, column=0, padx=10, pady=10, sticky="ew")
+        self.destinations_settings_frame.frame.grid(row=4, column=0, padx=10, pady=10, sticky="ew")
+        self.users_settings_frame.frame.grid(row=5, column=0, padx=10, pady=10, sticky="ew")
+        self.devices_settings_frame.frame.grid(row=6, column=0, padx=10, pady=10, sticky="ew")
+        self.categories_settings_frame.frame.grid(row=7, column=0, padx=10, pady=10, sticky="ew")
 
         generate_button = ttk.Button(self.frame, text="Generate Logs", command=self.generate_logs, style='primary.TButton')
         generate_button.grid(row=10, column=0, padx=10, pady=20, sticky="ew")
@@ -67,36 +73,28 @@ class ApplicationGUI:
 
     def generate_logs(self):
         entries = self.log_settings_frame.get_entries()
-        log_count = entries[1]
-
-        def validate_and_update(entry):
-            val = int(entry.get())
-            if val > log_count:
-                entry.delete(0, tk.END)
-                entry.insert(0, str(log_count))
-            return int(entry.get())
-
-        num_destinations = validate_and_update(self.destinations_settings_frame.num_entry)
-        num_users = validate_and_update(self.users_settings_frame.num_entry)
-        num_devices = validate_and_update(self.devices_settings_frame.num_entry)
-        num_categories = validate_and_update(self.categories_settings_frame.num_entry)
-
         entries += self.bytes_settings_frame.get_entries()
-        entries += [num_destinations] + self.destinations_settings_frame.get_entries()[1:]
-        entries += [num_users] + self.users_settings_frame.get_entries()[1:]
-        entries += [num_devices] + self.devices_settings_frame.get_entries()[1:]
-        entries += [num_categories] + self.categories_settings_frame.get_entries()[1:]
-
         service_types = self.service_type_frame.get_service_types()
         actions = self.action_settings_frame.get_actions()
+        destinations = self.destinations_settings_frame.get_entries()
+        users = self.users_settings_frame.get_entries()
+        devices = self.devices_settings_frame.get_entries()
+        categories = self.categories_settings_frame.get_entries()
+        self.log_generator.generate_logs(entries, service_types, actions, destinations, users, devices, categories)
 
-        self.log_generator.generate_logs(entries, service_types, actions)
+    def update_all_distributions(self):
+        self.destinations_settings_frame.update_distribution(None)
+        self.users_settings_frame.update_distribution(None)
+        self.devices_settings_frame.update_distribution(None)
+        self.categories_settings_frame.update_distribution(None)
 
     def _on_mousewheel(self, event):
         self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
 
-    def update_all_distributions(self):
-        self.destinations_settings_frame.update_distribution()
-        self.users_settings_frame.update_distribution()
-        self.devices_settings_frame.update_distribution()
-        self.categories_settings_frame.update_distribution()
+if __name__ == "__main__":
+    root = tk.Tk()
+    config_manager = ConfigManager("config.json")
+    config = config_manager.config
+    log_generator = LogGenerator(config)
+    app = ApplicationGUI(root, config_manager, log_generator)
+    root.mainloop()
