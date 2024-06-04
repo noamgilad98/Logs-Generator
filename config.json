@@ -1,19 +1,20 @@
 {
-    "default_directory": "C:/Users/t-noamgilad/Downloads/Demo Logs",
+    "default_directory": "demo_logs",
     "log_count_default": 100,
     "time_span_options": {
-        "24 hours": 24,
-        "7 days": 168,
-        "30 days": 720
+      "24 hours": 24,
+      "7 days": 168,
+      "30 days": 720
     },
     "distinct_destinations_default": 5,
-    "distinct_users_default": 100,
-    "distinct_devices_default": 100,
-    "distinct_categories_default": 100,
+    "distinct_users_default": 5,
+    "distinct_devices_default": 5,
+    "distinct_categories_default": 5,
     "bytes_sent_min_default": 0,
     "bytes_sent_max_default": 50000,
     "bytes_sent_avg_default": 1000,
     "bytes_received_min_default": 0,
     "bytes_received_max_default": 50000,
     "bytes_received_avg_default": 1000
-}
+  }
+  

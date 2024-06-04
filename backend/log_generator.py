@@ -47,10 +47,10 @@ class LogGenerator:
 
         time_span, log_count, min_sent, max_sent, avg_sent, min_received, max_received, avg_received, num_destinations, dist_dest, num_users, dist_users, num_devices, dist_devices, num_categories, dist_categories = entries
 
-        dest_values = self.generate_distribution(log_count, dist_dest)
-        user_values = self.generate_distribution(log_count, dist_users)
-        device_values = self.generate_distribution(log_count, dist_devices)
-        category_values = self.generate_distribution(log_count, dist_categories)
+        dest_values = self.generate_distribution(num_destinations, dist_dest)
+        user_values = self.generate_distribution(num_users, dist_users)
+        device_values = self.generate_distribution(num_devices, dist_devices)
+        category_values = self.generate_distribution(num_categories, dist_categories)
 
         dest_indices = np.clip(np.round(dest_values).astype(int), 0, num_destinations - 1)
         user_indices = np.clip(np.round(user_values).astype(int), 0, num_users - 1)
@@ -70,15 +70,16 @@ class LogGenerator:
             counter += 1
 
         with open(filename, 'w') as file:
-            for _ in range(log_count):
-                timestamp = self.generate_timestamp(self.config['time_span_options'][time_span])
-                source_ip = self.generate_ip()
-                bytes_sent = self.generate_bytes(min_sent, max_sent, avg_sent)
-                bytes_received = self.generate_bytes(min_received, max_received, avg_received)
-                service_type = self.fake.random_element(elements=[st for st, selected in zip(('Private', 'M365', 'Internet'), service_types) if selected])
-                protocol = self.fake.random_element(elements=[pt for pt, selected in zip(('Tcp', 'Udp'), [True, True])])
-                action = self.fake.random_element(elements=[ac for ac, selected in zip(('Allow', 'Block'), actions) if selected])
-                dest = f"destination_{random.choice(list(destination_counts.keys()))}"
+            for index, count in destination_counts.items():
+                dest = f"destination_{index}"
+                for _ in range(count):
+                    timestamp = self.generate_timestamp(self.config['time_span_options'][time_span])
+                    source_ip = self.generate_ip()
+                    bytes_sent = self.generate_bytes(min_sent, max_sent, avg_sent)
+                    bytes_received = self.generate_bytes(min_received, max_received, avg_received)
+                    service_type = self.fake.random_element(elements=[st for st, selected in zip(('Private', 'M365', 'Internet'), service_types) if selected])
+                    protocol = self.fake.random_element(elements=[pt for pt, selected in zip(('Tcp', 'Udp'), [True, True])])
+                    action = self.fake.random_element(elements=[ac for ac, selected in zip(('Allow', 'Block'), actions) if selected])
 
-                log = f"{timestamp},{source_ip},{self.fake.uuid4()}:60707,{self.fake.uuid4()},{self.fake.uuid4()},{self.fake.uuid4()},,{service_type},'Client',{self.generate_ip()},1947,{dest},{self.generate_ip()},60707,'Windows 10 Business','10.0.19045',1.6.51,{self.fake.uuid4()},{self.fake.uuid4()},'{self.fake.email()}',{protocol},'Ipv4',,,,,{bytes_sent},{bytes_received},,,,,,,,,,,,,,,,,,,,,,{timestamp},'Closed',,,,'{action}','QuickAccess',,'West US',,,,,,,,,,'Success',{timestamp},,{self.config['default_directory']}\n"
-                file.write(log)
+                    log = f"{timestamp},{source_ip},{self.fake.uuid4()}:60707,{self.fake.uuid4()},{self.fake.uuid4()},{self.fake.uuid4()},,{service_type},'Client',{self.generate_ip()},1947,{dest},{self.generate_ip()},60707,'Windows 10 Business','10.0.19045',1.6.51,{self.fake.uuid4()},{self.fake.uuid4()},'{self.fake.email()}',{protocol},'Ipv4',,,,,{bytes_sent},{bytes_received},,,,,,,,,,,,,,,,,,,,,,{timestamp},'Closed',,,,'{action}','QuickAccess',,'West US',,,,,,,,,,'Success',{timestamp},,{self.config['default_directory']}\n"
+                    file.write(log)

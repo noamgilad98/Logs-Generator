@@ -55,10 +55,10 @@ class ApplicationGUI:
         self.categories_settings_frame = CategoriesSettingsFrame(self.frame, self.config_manager, self)
 
         generate_button = ttk.Button(self.frame, text="Generate Logs", command=self.generate_logs, style='primary.TButton')
-        generate_button.grid(row=8, column=0, padx=10, pady=20, sticky="ew")
+        generate_button.grid(row=10, column=0, padx=10, pady=20, sticky="ew")
 
         change_dir_button = ttk.Button(self.frame, text="Save Logs In", command=self.set_directory, style='primary.TButton')
-        change_dir_button.grid(row=9, column=0, padx=10, pady=20, sticky="ew")
+        change_dir_button.grid(row=11, column=0, padx=10, pady=20, sticky="ew")
 
     def set_directory(self):
         directory = filedialog.askdirectory(initialdir=self.config_manager.get('default_directory'), title="Select Folder")
