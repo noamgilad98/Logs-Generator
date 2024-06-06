@@ -3,7 +3,6 @@ import random
 import datetime
 from faker import Faker
 import numpy as np
-from collections import Counter
 
 class LogGenerator:
     def __init__(self, config):
@@ -33,43 +32,48 @@ class LogGenerator:
     def validate_choices(self, *args):
         return all(any(choices) for choices in args)
 
-    def generate_distribution(self, log_count, num_destinations, distribution_type):
+    def generate_distribution(self, log_count, num_distinct, distribution_type):
         if distribution_type == "Normal":
-            mean = log_count / num_destinations
+            mean = log_count / num_distinct
             std_dev = mean / 2
-            distribution = np.random.normal(loc=mean, scale=std_dev, size=num_destinations).astype(int)
+            values = np.random.normal(loc=mean, scale=std_dev, size=num_distinct).astype(int)
         elif distribution_type == "Exponential":
-            scale = log_count / num_destinations
-            distribution = np.random.exponential(scale=scale, size=num_destinations).astype(int)
+            scale = log_count / num_distinct
+            values = np.random.exponential(scale=scale, size=num_distinct).astype(int)
         else:  # Uniform
-            distribution = np.full(num_destinations, log_count // num_destinations)
-            distribution[:log_count % num_destinations] += 1
+            values = np.full(num_distinct, log_count // num_distinct)
+            values[:log_count % num_distinct] += 1
 
-        # Ensure no negative values and adjust to match log_count
-        distribution = np.clip(distribution, 0, None)
-        while distribution.sum() > log_count:
-            distribution[random.randint(0, num_destinations - 1)] -= 1
-        while distribution.sum() < log_count:
-            distribution[random.randint(0, num_destinations - 1)] += 1
+        # Adjust to ensure sum of values is equal to log_count
+        while sum(values) > log_count:
+            values[random.randint(0, num_distinct - 1)] -= 1
+        while sum(values) < log_count:
+            values[random.randint(0, num_distinct - 1)] += 1
 
-        return distribution
+        return values
 
-    def generate_logs(self, entries, service_types, actions, num_destinations, users, devices, categories, distribution_type):
+    def generate_logs(self, entries, service_types, actions, num_destinations, dist_type_dest, num_users, dist_type_user, num_devices, dist_type_device, num_categories, dist_type_category):
         if not self.validate_choices(service_types, actions):
             raise ValueError("Please select at least one service type and one action.")
 
         time_span, log_count = entries[:2]
         min_sent, max_sent, avg_sent, min_received, max_received, avg_received = entries[2:8]
 
-        # Generate unique destinations
+        # Generate unique destinations, users, devices, and categories
         destinations = [{
             "destinationIp": self.generate_ip(),
             "destinationPort": self.generate_port(),
             "destinationFQDN": self.generate_destination_fqdn()
         } for _ in range(num_destinations)]
+        users = [self.fake.uuid4() for _ in range(num_users)]
+        devices = [self.fake.uuid4() for _ in range(num_devices)]
+        categories = [self.fake.word() for _ in range(num_categories)]
 
-        # Generate distribution of logs per destination
-        distribution = self.generate_distribution(log_count, num_destinations, distribution_type)
+        # Generate distributions
+        dist_dest = self.generate_distribution(log_count, num_destinations, dist_type_dest)
+        dist_user = self.generate_distribution(log_count, num_users, dist_type_user)
+        dist_device = self.generate_distribution(log_count, num_devices, dist_type_device)
+        dist_category = self.generate_distribution(log_count, num_categories, dist_type_category)
 
         base_filename = os.path.join(self.config['default_directory'], "logs_output.txt")
         filename = base_filename
@@ -80,21 +84,21 @@ class LogGenerator:
 
         logs = []
 
-        for dest_index, num_logs_for_this_dest in enumerate(distribution):
-            destination = destinations[dest_index]
-            for _ in range(num_logs_for_this_dest):
+        for dest_index, num_logs_for_dest in enumerate(dist_dest):
+            for _ in range(num_logs_for_dest):
                 timestamp = self.generate_timestamp(self.config['time_span_options'][time_span])
                 source_ip = self.generate_ip()
-                user = random.choice(users)
-                device = random.choice(devices)
-                category = random.choice(categories)
+                destination = destinations[dest_index]
+                user = users[random.randint(0, num_users - 1)]
+                device = devices[random.randint(0, num_devices - 1)]
+                category = categories[random.randint(0, num_categories - 1)]
                 bytes_sent = self.generate_bytes(min_sent, max_sent, avg_sent)
                 bytes_received = self.generate_bytes(min_received, max_received, avg_received)
                 service_type = self.fake.random_element(elements=[st for st, selected in zip(('Private', 'M365', 'Internet'), service_types) if selected])
                 protocol = self.fake.random_element(elements=[pt for pt, selected in zip(('Tcp', 'Udp'), [True, True])])
                 action = self.fake.random_element(elements=[ac for ac, selected in zip(('Allow', 'Block'), actions) if selected])
 
-                log = f"{timestamp},{source_ip},{self.fake.uuid4()}:60707,{self.fake.uuid4()},{self.fake.uuid4()},{self.fake.uuid4()},,{service_type},'Client',{self.generate_ip()},1947,{destination['destinationFQDN']},{destination['destinationIp']},{destination['destinationPort']},'Windows 10 Business','10.0.19045',1.6.51,{device},{user},'{self.fake.email()}',{protocol},'Ipv4',,,,,{bytes_sent},{bytes_received},,,,,,,,,,,,,,,,,,,,,,{timestamp},'Closed',,,,'{action}','QuickAccess',,'West US',,,,,,,,,,'Success',{timestamp},,{self.config['default_directory']}\n"
+                log = f"{timestamp},{source_ip},{self.fake.uuid4()}:60707,{self.fake.uuid4()},{self.fake.uuid4()},{self.fake.uuid4()},,{service_type},'Client',{self.generate_ip()},1947,{destination['destinationFQDN']},{destination['destinationIp']},{destination['destinationPort']},'Windows 10 Business','10.0.19045',1.6.51,{device},{user},'{self.fake.email()}',{protocol},'Ipv4',,,,,{bytes_sent},{bytes_received},,,,,,,,,,,,,,,,,,,,,,{timestamp},'Closed',,,,'{action}','QuickAccess',,'West US',,,,,,,,,,'Success',{timestamp},,{self.config['default_directory']},\n"
                 logs.append(log)
 
         with open(filename, 'w') as file:
