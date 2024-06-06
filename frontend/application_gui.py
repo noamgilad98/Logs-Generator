@@ -76,11 +76,12 @@ class ApplicationGUI:
         entries += self.bytes_settings_frame.get_entries()
         service_types = self.service_type_frame.get_service_types()
         actions = self.action_settings_frame.get_actions()
-        destinations = self.destinations_settings_frame.get_entries()
+        num_destinations = int(self.destinations_settings_frame.num_distinct_entry.get())  # Ensure this is an integer
         users = self.users_settings_frame.get_entries()
         devices = self.devices_settings_frame.get_entries()
         categories = self.categories_settings_frame.get_entries()
-        self.log_generator.generate_logs(entries, service_types, actions, destinations, users, devices, categories)
+        self.log_generator.generate_logs(entries, service_types, actions, num_destinations, users, devices, categories)
+        # Example call
 
 
     def update_all_distributions(self):

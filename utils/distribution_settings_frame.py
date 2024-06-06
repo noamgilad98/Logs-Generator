@@ -72,12 +72,12 @@ class DistributionSettingsFrame:
         canvas_height = int(self.dist_canvas.cget("height"))
         max_height = max(hist) if max(hist) > 0 else 1
         max_height_with_padding = max_height * 1.2  # Add more padding at the top
-        bar_width = canvas_width / (len(hist) + 1)  # Add space for the y-axis labels
+        bar_width = (canvas_width - 40) / len(hist)  # Reduce canvas width for y-axis labels
 
         for i, h in enumerate(hist):
-            left = (i + 1) * bar_width  # Shift bars to the right
+            left = (i * bar_width) + 40  # Shift bars right by 40 pixels
             right = left + bar_width
-            top = canvas_height - (h / max_height_with_padding) * canvas_height  # Adjusted to use max_height_with_padding
+            top = canvas_height - (h / max_height_with_padding) * canvas_height
             self.dist_canvas.create_rectangle(left, top, right, canvas_height, fill="#0078d7")
 
         self.draw_y_axis(canvas_height, max_height_with_padding)
@@ -85,9 +85,9 @@ class DistributionSettingsFrame:
     def draw_y_axis(self, canvas_height, max_height_with_padding):
         step = max(1, round(max_height_with_padding / 5))
         for i in range(0, int(max_height_with_padding) + step, step):
-            y = canvas_height - (i / max_height_with_padding) * canvas_height  # Adjusted to use max_height_with_padding
-            self.dist_canvas.create_text(30, y, text=f"{i:,}", anchor="w", font=("Segoe UI", 8), fill="#333333")
+            y = canvas_height - (i / max_height_with_padding) * canvas_height
+            self.dist_canvas.create_text(10, y, text=f"{i:,}", anchor="e", font=("Segoe UI", 8), fill="#333333")
 
         # Ensure the top and bottom labels fit within the canvas
-        self.dist_canvas.create_text(30, canvas_height, text="0", anchor="w", font=("Segoe UI", 8), fill="#333333")
-        self.dist_canvas.create_text(30, canvas_height - (max_height_with_padding / max_height_with_padding) * canvas_height, text=f"{int(max_height_with_padding):,}", anchor="w", font=("Segoe UI", 8), fill="#333333")
+        self.dist_canvas.create_text(10, canvas_height, text="0", anchor="e", font=("Segoe UI", 8), fill="#333333")
+        self.dist_canvas.create_text(10, 0, text=f"{int(max_height_with_padding):,}", anchor="e", font=("Segoe UI", 8), fill="#333333")
