@@ -4,7 +4,6 @@ import datetime
 from faker import Faker
 import numpy as np
 from collections import Counter
-
 class LogGenerator:
     def __init__(self, config):
         self.config = config
@@ -30,21 +29,12 @@ class LogGenerator:
     def validate_choices(self, *args):
         return all(any(choices) for choices in args)
 
-    def generate_logs(self, entries, service_types, actions):
+    def generate_logs(self, entries, service_types, actions, destinations, users, devices, categories):
         if not self.validate_choices(service_types, actions):
             raise ValueError("Please select at least one service type and one action.")
 
         time_span, log_count = entries[:2]
         min_sent, max_sent, avg_sent, min_received, max_received, avg_received = entries[2:8]
-        num_destinations, dest_dist_type = entries[8], entries[9]
-        num_users, user_dist_type = entries[10], entries[11]
-        num_devices, device_dist_type = entries[12], entries[13]
-        num_categories, category_dist_type = entries[14], entries[15]
-
-        destinations = [self.generate_destination_fqdn() for _ in range(num_destinations)]
-        users = [self.fake.uuid4() for _ in range(num_users)]
-        devices = [self.fake.uuid4() for _ in range(num_devices)]
-        categories = [self.fake.word() for _ in range(num_categories)]
 
         base_filename = os.path.join(self.config['default_directory'], "logs_output.txt")
         filename = base_filename

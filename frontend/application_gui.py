@@ -82,6 +82,7 @@ class ApplicationGUI:
         categories = self.categories_settings_frame.get_entries()
         self.log_generator.generate_logs(entries, service_types, actions, destinations, users, devices, categories)
 
+
     def update_all_distributions(self):
         self.destinations_settings_frame.update_distribution(None)
         self.users_settings_frame.update_distribution(None)
