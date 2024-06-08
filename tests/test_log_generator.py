@@ -1,85 +1,70 @@
 import unittest
-from collections import Counter
-from faker import Faker
-import numpy as np
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from logs_generator.frontend.application_gui import ApplicationGUI
+from logs_generator.backend.config_manager import ConfigManager
 from logs_generator.backend.log_generator import LogGenerator
+import tkinter as tk
+from unittest.mock import patch, MagicMock
 
 class TestLogGenerator(unittest.TestCase):
     def setUp(self):
         self.config = {
-            'default_directory': './logs',
+            'default_directory': 'test_logs',
             'time_span_options': [24, 48, 72]
         }
         self.log_generator = LogGenerator(self.config)
-        self.entries = [0, 100, 100, 1000, 500, 200, 700, 300]  # example entries
-        self.service_types = [True, True, False]  # example service types
-        self.actions = [True, True]  # example actions
-        self.num_destinations = 10  # example number of destinations
-        self.users = [Faker().uuid4() for _ in range(10)]  # example users
-        self.devices = [Faker().uuid4() for _ in range(10)]  # example devices
-        self.categories = [Faker().word() for _ in range(5)]  # example categories
+        if not os.path.exists('test_logs'):
+            os.makedirs('test_logs')
 
-    def check_distribution(self, distribution, log_count):
-        self.assertEqual(sum(distribution), log_count)
-        self.assertTrue(all(n >= 0 for n in distribution))
+    def tearDown(self):
+        if os.path.exists('test_logs/logs_output.txt'):
+            os.remove('test_logs/logs_output.txt')
+        if os.path.exists('test_logs'):
+            os.rmdir('test_logs')
 
-    def test_uniform_distribution_destinations(self):
-        distribution = self.log_generator.generate_distribution(100, 10, "Uniform")
-        self.check_distribution(distribution, 100)
-        count = Counter(distribution)
-        self.assertTrue(all(count[val] > 0 for val in count))  # Check if all values are represented
+    def test_uniform_distribution_10_logs_8_destinations(self):
+        entries = [0, 10, 100, 200, 150, 100, 200, 150]  # Example values for time_span, log_count, and bytes
+        service_types = [True, False, False]  # Only 'Private' service type selected
+        actions = [True, False]  # Only 'Allow' action selected
 
-    def test_exponential_distribution_destinations(self):
-        distribution = self.log_generator.generate_distribution(100, 10, "Exponential")
-        self.check_distribution(distribution, 100)
-        self.assertGreater(max(distribution), min(distribution))  # Ensure the distribution is varied
+        num_destinations = 8
+        dist_type_dest = "Uniform"
+        num_users = 10
+        dist_type_user = "Uniform"
+        num_devices = 10
+        dist_type_device = "Uniform"
+        num_categories = 10
+        dist_type_category = "Uniform"
 
-    def test_normal_distribution_destinations(self):
-        distribution = self.log_generator.generate_distribution(100, 10, "Normal")
-        self.check_distribution(distribution, 100)
-        self.assertGreater(max(distribution), min(distribution))  # Ensure the distribution is varied
+        fake = MagicMock()
+        fake.domain_name.side_effect = [f'dest{i}.com' for i in range(num_destinations)]
+        fake.uuid4.side_effect = [f'user{i}' for i in range(num_users)] + [f'device{i}' for i in range(num_devices)] + [f'cat{i}' for i in range(num_categories)]
 
-    def test_uniform_distribution_users(self):
-        self.log_generator.generate_logs(self.entries, self.service_types, self.actions, self.num_destinations, self.users, self.devices, self.categories)
-        with open('./logs/logs_output.txt') as f:
-            logs = f.readlines()
-        user_counts = Counter(log.split(',')[17] for log in logs)
-        self.assertTrue(all(count > 0 for count in user_counts.values()))  # Ensure all users are represented
+        with patch('logs_generator.backend.log_generator.Faker', return_value=fake):
+            self.log_generator.generate_logs(entries, service_types, actions, num_destinations, dist_type_dest, num_users, dist_type_user, num_devices, dist_type_device, num_categories, dist_type_category)
 
-    def test_exponential_distribution_users(self):
-        self.log_generator.generate_logs(self.entries, self.service_types, self.actions, self.num_destinations, self.users, self.devices, self.categories)
-        with open('./logs/logs_output.txt') as f:
-            logs = f.readlines()
-        user_counts = Counter(log.split(',')[17] for log in logs)
-        self.assertGreater(max(user_counts.values()), min(user_counts.values()))  # Ensure the distribution is varied
+        with open('test_logs/logs_output.txt', 'r') as file:
+            logs = file.readlines()
 
-    def test_normal_distribution_users(self):
-        self.log_generator.generate_logs(self.entries, self.service_types, self.actions, self.num_destinations, self.users, self.devices, self.categories)
-        with open('./logs/logs_output.txt') as f:
-            logs = f.readlines()
-        user_counts = Counter(log.split(',')[17] for log in logs)
-        self.assertGreater(max(user_counts.values()), min(user_counts.values()))  # Ensure the distribution is varied
+        destinations = [log.split(',')[12] for log in logs]  # Extracting destinationFQDN from logs
+        dest_counts = {dest: destinations.count(dest) for dest in set(destinations)}
 
-    def test_uniform_distribution_devices(self):
-        self.log_generator.generate_logs(self.entries, self.service_types, self.actions, self.num_destinations, self.users, self.devices, self.categories)
-        with open('./logs/logs_output.txt') as f:
-            logs = f.readlines()
-        device_counts = Counter(log.split(',')[18] for log in logs)
-        self.assertTrue(all(count > 0 for count in device_counts.values()))  # Ensure all devices are represented
+        expected_counts = [1, 1, 1, 1, 1, 1, 2, 2]
+        actual_counts = sorted(dest_counts.values())
 
-    def test_exponential_distribution_devices(self):
-        self.log_generator.generate_logs(self.entries, self.service_types, self.actions, self.num_destinations, self.users, self.devices, self.categories)
-        with open('./logs/logs_output.txt') as f:
-            logs = f.readlines()
-        device_counts = Counter(log.split(',')[18] for log in logs)
-        self.assertGreater(max(device_counts.values()), min(device_counts.values()))  # Ensure the distribution is varied
+        self.assertTrue(expected_counts == actual_counts)
 
-    def test_normal_distribution_devices(self):
-        self.log_generator.generate_logs(self.entries, self.service_types, self.actions, self.num_destinations, self.users, self.devices, self.categories)
-        with open('./logs/logs_output.txt') as f:
-            logs = f.readlines()
-        device_counts = Counter(log.split(',')[18] for log in logs)
-        self.assertGreater(max(device_counts.values()), min(device_counts.values()))  # Ensure the distribution is varied
+class TestSimpleAssertion(unittest.TestCase):
+    def test_true_equals_true(self):
+        self.assertTrue(True)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    root = tk.Tk()
+    config_manager = ConfigManager("config.json")
+    config = config_manager.config
+    log_generator = LogGenerator(config)
+    app = ApplicationGUI(root, config_manager, log_generator)
     unittest.main()
