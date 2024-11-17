@@ -4,9 +4,9 @@ import os
 # Add the parent directory to the sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from logs_generator.frontend.application_gui import ApplicationGUI
-from logs_generator.backend.config_manager import ConfigManager
-from logs_generator.backend.log_generator import LogGenerator
+from frontend.application_gui import ApplicationGUI
+from backend.config_manager import ConfigManager
+from backend.log_generator import LogGenerator
 import tkinter as tk
 
 if __name__ == "__main__":

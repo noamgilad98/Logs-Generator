@@ -1,13 +1,13 @@
 import tkinter as tk
 from tkinter import filedialog, Canvas
 import ttkbootstrap as ttk
-from logs_generator.backend.config_manager import ConfigManager
-from logs_generator.backend.log_generator import LogGenerator
-from logs_generator.frontend.log_settings_frame import LogSettingsFrame
-from logs_generator.frontend.bytes_settings_frame import BytesSettingsFrame
-from logs_generator.frontend.service_type_frame import ServiceTypeFrame
-from logs_generator.frontend.action_settings_frame import ActionSettingsFrame
-from logs_generator.utils.distribution_settings_frame import DistributionSettingsFrame
+from backend.config_manager import ConfigManager
+from backend.log_generator import LogGenerator
+from frontend.log_settings_frame import LogSettingsFrame
+from frontend.bytes_settings_frame import BytesSettingsFrame
+from frontend.service_type_frame import ServiceTypeFrame
+from frontend.action_settings_frame import ActionSettingsFrame
+from utils.distribution_settings_frame import DistributionSettingsFrame
 
 class ApplicationGUI:
     def __init__(self, root, config_manager, log_generator):

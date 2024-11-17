@@ -1,4 +1,4 @@
-from logs_generator.utils.distribution_settings_frame import DistributionSettingsFrame
+from utils.distribution_settings_frame import DistributionSettingsFrame
 
 class UsersSettingsFrame(DistributionSettingsFrame):
     def __init__(self, parent, config_manager, app):
